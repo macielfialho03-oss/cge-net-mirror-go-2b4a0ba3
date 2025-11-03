@@ -1,0 +1,58 @@
+// backend/index.js
+import express from "express";
+import cors from "cors";
+import sql from "mssql";
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// 🔗 Configuração do SQL Server
+const dbConfig = {
+  user: "admin_cgero_teste",
+  password: "Cge@2023",
+  server: "172.16.16.6",
+  database: "DbCgeNet_Dev",
+  options: { trustServerCertificate: true },
+};
+
+// 🟢 Conectar ao banco
+sql.connect(dbConfig)
+  .then(() => console.log("✅ Conectado ao SQL Server"))
+  .catch((err) => console.error("❌ Erro ao conectar:", err));
+
+// 📋 Rota principal
+app.get("/", (req, res) => {
+  res.send("Servidor backend ativo 🚀");
+});
+
+// 📋 Rota para listar serviços
+app.get("/api/servicos", async (req, res) => {
+  try {
+    const result = await sql.query`SELECT * FROM Servicos`;
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Erro ao buscar serviços:", err);
+    res.status(500).send("Erro ao buscar serviços");
+  }
+});
+
+// ➕ Rota para adicionar novo serviço
+app.post("/api/servicos", async (req, res) => {
+  const { Nome, Descricao, IconType, Link, LinkText, ImageUrl } = req.body;
+  try {
+    await sql.query`
+      INSERT INTO Servicos (Nome, Descricao, IconType, Link, LinkText, ImageUrl)
+      VALUES (${Nome}, ${Descricao}, ${IconType}, ${Link}, ${LinkText}, ${ImageUrl})
+    `;
+    res.status(201).send("Serviço adicionado com sucesso!");
+  } catch (err) {
+    console.error("Erro ao adicionar serviço:", err);
+    res.status(500).send("Erro ao adicionar serviço");
+  }
+});
+
+// 🚀 Inicia o servidor
+app.listen(3001, () => {
+  console.log("🌐 Backend rodando em http://localhost:3001");
+});
